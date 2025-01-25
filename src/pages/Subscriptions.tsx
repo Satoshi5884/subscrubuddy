@@ -1,4 +1,5 @@
 import { Header } from "@/components/Header";
+import { SubscriptionForm } from "@/components/SubscriptionForm";
 import {
   Card,
   CardContent,
@@ -6,6 +7,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -88,10 +97,23 @@ export default function Subscriptions() {
                   登録済みのサブスクリプションサービス
                 </CardDescription>
               </div>
-              <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
-                <Plus className="mr-2 h-4 w-4" />
-                新規登録
-              </button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">
+                    <Plus className="mr-2 h-4 w-4" />
+                    新規登録
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>サブスクリプション登録</DialogTitle>
+                    <DialogDescription>
+                      新しいサブスクリプションサービスを登録します。
+                    </DialogDescription>
+                  </DialogHeader>
+                  <SubscriptionForm />
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
