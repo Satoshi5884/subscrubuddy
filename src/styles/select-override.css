@@ -1,0 +1,33 @@
+.select-content {
+  position: relative;
+  z-index: 9999;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.select-content .select-item {
+  padding: 12px 8px;
+  line-height: 1.5;
+  height: auto;
+  background-color: white;
+}
+
+/* チェックマークを非表示にする */
+[cmdk-select-item] > svg {
+  display: none;
+}
+
+.select-content .select-item:hover {
+  background-color: #f7fafc;
+}
+
+.select-viewport {
+  padding: 4px;
+  background-color: white;
+}
+
+.select-content .select-item::before {
+  display: none !important;
+} 

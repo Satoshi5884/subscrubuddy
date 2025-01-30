@@ -23,41 +23,48 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CreditCard, Plus } from "lucide-react";
+import { CreditCard, Plus, Trash2 } from "lucide-react";
+import { useSubscriptionStore } from "@/lib/store";
+import { useEffect } from "react";
+import { addDoc, collection } from "firebase/firestore";
+import { db, auth } from "@/lib/firebase";
 
 export default function Subscriptions() {
-  // Mock subscription data - this would come from your backend in a real app
-  const subscriptions = [
-    {
-      name: "Netflix",
-      amount: 1490,
-      cycle: "月額",
-      category: "エンターテイメント",
-      nextPayment: "2024/03/15",
-    },
-    {
-      name: "Amazon Prime",
-      amount: 4900,
-      cycle: "年額",
-      category: "ショッピング",
-      nextPayment: "2024/06/20",
-    },
-    {
-      name: "Spotify",
-      amount: 980,
-      cycle: "月額",
-      category: "音楽",
-      nextPayment: "2024/03/01",
-    },
-  ];
+  const subscriptions = useSubscriptionStore((state) => state.subscriptions);
+  const initializeSubscriptionsListener = useSubscriptionStore(
+    (state) => state.initializeSubscriptionsListener
+  );
+  const deleteSubscription = useSubscriptionStore((state) => state.deleteSubscription);
+
+  useEffect(() => {
+    const unsubscribe = initializeSubscriptionsListener();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [initializeSubscriptionsListener]);
 
   const totalMonthly = subscriptions
-    .filter((sub) => sub.cycle === "月額")
+    .filter((sub) => sub.cycle === "monthly")
     .reduce((acc, sub) => acc + sub.amount, 0);
 
   const totalYearly = subscriptions
-    .filter((sub) => sub.cycle === "年額")
+    .filter((sub) => sub.cycle === "yearly")
     .reduce((acc, sub) => acc + sub.amount, 0);
+
+  const handleDelete = async (id: string) => {
+    if (!id) return;
+    await deleteSubscription(id);
+  };
+
+  const handleSubscriptionSubmit = async (subscription: any) => {
+    if (!auth.currentUser) return;
+    
+    await addDoc(collection(db, "subscriptions"), {
+      ...subscription,
+      userId: auth.currentUser.uid,
+      createdAt: new Date(),
+    });
+  };
 
   return (
     <>
@@ -111,7 +118,7 @@ export default function Subscriptions() {
                       新しいサブスクリプションサービスを登録します。
                     </DialogDescription>
                   </DialogHeader>
-                  <SubscriptionForm />
+                  <SubscriptionForm onSubmit={handleSubscriptionSubmit} />
                 </DialogContent>
               </Dialog>
             </div>
@@ -125,6 +132,7 @@ export default function Subscriptions() {
                   <TableHead>支払いサイクル</TableHead>
                   <TableHead>カテゴリー</TableHead>
                   <TableHead>次回支払日</TableHead>
+                  <TableHead>削除</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,9 +142,20 @@ export default function Subscriptions() {
                       {subscription.name}
                     </TableCell>
                     <TableCell>¥{subscription.amount.toLocaleString()}</TableCell>
-                    <TableCell>{subscription.cycle}</TableCell>
-                    <TableCell>{subscription.category}</TableCell>
-                    <TableCell>{subscription.nextPayment}</TableCell>
+                    <TableCell>{subscription.cycle === "monthly" ? "月額" : "年額"}</TableCell>
+                    <TableCell>{subscription.category === "entertainment" ? "エンターテイメント" :
+                              subscription.category === "shopping" ? "ショッピング" :
+                              subscription.category === "music" ? "音楽" :
+                              subscription.category === "utility" ? "ユーティリティ" : "その他"}</TableCell>
+                    <TableCell>{new Date(subscription.nextPayment).toLocaleDateString('ja-JP')}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => handleDelete(subscription.id!)}
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-destructive/90 h-10 px-4 py-2"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive-foreground" />
+                      </button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

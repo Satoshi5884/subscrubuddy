@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
 import { BarChart2, Calendar, CreditCard, DollarSign } from "lucide-react";
+import { useSubscriptionStore } from "@/lib/store";
 import {
   Table,
   TableBody,
@@ -9,21 +10,32 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-const mockSubscriptions = [
-  { name: "Netflix", amount: 1490, cycle: "月額", nextPayment: "2024/03/15" },
-  { name: "Amazon Prime", amount: 4900, cycle: "年額", nextPayment: "2024/06/20" },
-  { name: "Spotify", amount: 980, cycle: "月額", nextPayment: "2024/03/01" },
-];
+import { useEffect } from "react";
 
 export default function Dashboard() {
-  const monthlyTotal = mockSubscriptions
-    .filter(sub => sub.cycle === "月額")
+  const subscriptions = useSubscriptionStore((state) => state.subscriptions);
+  const initializeSubscriptionsListener = useSubscriptionStore(
+    (state) => state.initializeSubscriptionsListener
+  );
+
+  useEffect(() => {
+    const unsubscribe = initializeSubscriptionsListener();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [initializeSubscriptionsListener]);
+
+  const monthlyTotal = subscriptions
+    .filter(sub => sub.cycle === "monthly")
     .reduce((acc, sub) => acc + sub.amount, 0);
   
-  const yearlyTotal = mockSubscriptions
-    .filter(sub => sub.cycle === "年額")
+  const yearlyTotal = subscriptions
+    .filter(sub => sub.cycle === "yearly")
     .reduce((acc, sub) => acc + sub.amount, 0);
+
+  const nextPaymentDate = subscriptions
+    .map(sub => new Date(sub.nextPayment))
+    .sort((a, b) => a.getTime() - b.getTime())[0];
 
   return (
     <>
@@ -54,7 +66,7 @@ export default function Dashboard() {
               <BarChart2 className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockSubscriptions.length}</div>
+              <div className="text-2xl font-bold">{subscriptions.length}</div>
             </CardContent>
           </Card>
           <Card>
@@ -63,7 +75,9 @@ export default function Dashboard() {
               <Calendar className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3/1</div>
+              <div className="text-2xl font-bold">
+                {nextPaymentDate ? nextPaymentDate.toLocaleDateString('ja-JP') : '-'}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -83,12 +97,12 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockSubscriptions.map((sub, index) => (
+                {subscriptions.map((sub, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{sub.name}</TableCell>
                     <TableCell>¥{sub.amount.toLocaleString()}</TableCell>
-                    <TableCell>{sub.cycle}</TableCell>
-                    <TableCell>{sub.nextPayment}</TableCell>
+                    <TableCell>{sub.cycle === "monthly" ? "月額" : "年額"}</TableCell>
+                    <TableCell>{new Date(sub.nextPayment).toLocaleDateString('ja-JP')}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

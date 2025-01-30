@@ -21,6 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import '../styles/select-override.css';
+import { useSubscriptionStore } from "@/lib/store";
+import { useNavigate } from "react-router-dom";
+import { db, auth } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const formSchema = z.object({
   name: z.string().min(1, "サービス名を入力してください"),
@@ -34,8 +39,14 @@ const formSchema = z.object({
   nextPayment: z.string().min(1, "次回支払日を入力してください"),
 });
 
-export function SubscriptionForm() {
+interface SubscriptionFormProps {
+  onSubmit?: (subscription: any) => Promise<void>;
+}
+
+export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const addSubscription = useSubscriptionStore((state) => state.addSubscription);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,17 +58,56 @@ export function SubscriptionForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    toast({
-      title: "サブスクリプションを登録しました",
-      description: `${values.name}を登録しました`,
-    });
+  async function handleFormSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      if (!auth.currentUser) {
+        toast({
+          title: "エラーが発生しました",
+          description: "ログインが必要です",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const subscription = {
+        name: values.name,
+        amount: Number(values.amount),
+        cycle: values.cycle,
+        category: values.category,
+        nextPayment: values.nextPayment,
+      };
+
+      if (onSubmit) {
+        await onSubmit(subscription);
+      } else {
+        const subscriptionData = {
+          ...subscription,
+          userId: auth.currentUser.uid,
+          createdAt: new Date(),
+        };
+        await addDoc(collection(db, "subscriptions"), subscriptionData);
+        addSubscription(subscriptionData);
+      }
+
+      toast({
+        title: "サブスクリプションを登録しました",
+        description: `${values.name}を登録しました`,
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error adding subscription:", error);
+      toast({
+        title: "エラーが発生しました",
+        description: "サブスクリプションの登録に失敗しました",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
@@ -133,12 +183,12 @@ export function SubscriptionForm() {
                     <SelectValue placeholder="カテゴリーを選択" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="entertainment">エンターテイメント</SelectItem>
-                  <SelectItem value="shopping">ショッピング</SelectItem>
-                  <SelectItem value="music">音楽</SelectItem>
-                  <SelectItem value="utility">ユーティリティ</SelectItem>
-                  <SelectItem value="other">その他</SelectItem>
+                <SelectContent className="select-content">
+                  <SelectItem value="entertainment" className="select-item">エンターテイメント</SelectItem>
+                  <SelectItem value="shopping" className="select-item">ショッピング</SelectItem>
+                  <SelectItem value="music" className="select-item">音楽</SelectItem>
+                  <SelectItem value="utility" className="select-item">ユーティリティ</SelectItem>
+                  <SelectItem value="other" className="select-item">その他</SelectItem>
                 </SelectContent>
               </Select>
               <FormDescription>
