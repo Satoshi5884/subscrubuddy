@@ -25,7 +25,8 @@ import '../styles/select-override.css';
 import { useSubscriptionStore } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, onSnapshot } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, "サービス名を入力してください"),
@@ -41,15 +42,63 @@ const formSchema = z.object({
 
 interface SubscriptionFormProps {
   onSubmit?: (subscription: any) => Promise<void>;
+  initialData?: {
+    name: string;
+    amount: number;
+    cycle: "monthly" | "yearly";
+    category: string;
+    nextPayment: string;
+  };
 }
 
-export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
+interface Category {
+  id: string;
+  name: string;
+  isDefault?: boolean;
+}
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: "entertainment", name: "エンターテイメント", isDefault: true },
+  { id: "shopping", name: "ショッピング", isDefault: true },
+  { id: "music", name: "音楽", isDefault: true },
+  { id: "utility", name: "ユーティリティ", isDefault: true },
+  { id: "other", name: "その他", isDefault: true },
+];
+
+export function SubscriptionForm({ onSubmit, initialData }: SubscriptionFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
   const addSubscription = useSubscriptionStore((state) => state.addSubscription);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const q = query(
+      collection(db, "categories"),
+      where("userId", "==", auth.currentUser.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const userCategories = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Category));
+      setCategories([...DEFAULT_CATEGORIES, ...userCategories]);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    defaultValues: initialData ? {
+      name: initialData.name,
+      amount: String(initialData.amount),
+      cycle: initialData.cycle,
+      category: initialData.category,
+      nextPayment: initialData.nextPayment,
+    } : {
       name: "",
       amount: "",
       cycle: "monthly",
@@ -184,11 +233,40 @@ export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="select-content">
-                  <SelectItem value="entertainment" className="select-item">エンターテイメント</SelectItem>
-                  <SelectItem value="shopping" className="select-item">ショッピング</SelectItem>
-                  <SelectItem value="music" className="select-item">音楽</SelectItem>
-                  <SelectItem value="utility" className="select-item">ユーティリティ</SelectItem>
-                  <SelectItem value="other" className="select-item">その他</SelectItem>
+                  <SelectItem value="_header" disabled>カテゴリーを選択</SelectItem>
+                  <SelectItem value="_default_header" disabled className="select-item font-semibold">
+                    デフォルトカテゴリー
+                  </SelectItem>
+                  {categories
+                    .filter(category => category.isDefault)
+                    .map((category) => (
+                      <SelectItem 
+                        key={category.id} 
+                        value={category.id} 
+                        className="select-item pl-6"
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  
+                  {categories.filter(category => !category.isDefault).length > 0 && (
+                    <>
+                      <SelectItem value="_custom_header" disabled className="select-item font-semibold">
+                        カスタムカテゴリー
+                      </SelectItem>
+                      {categories
+                        .filter(category => !category.isDefault)
+                        .map((category) => (
+                          <SelectItem 
+                            key={category.id} 
+                            value={category.id} 
+                            className="select-item pl-6"
+                          >
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               <FormDescription>
@@ -214,7 +292,7 @@ export function SubscriptionForm({ onSubmit }: SubscriptionFormProps) {
           )}
         />
 
-        <Button type="submit">登録する</Button>
+        <Button type="submit">{initialData ? "更新する" : "登録する"}</Button>
       </form>
     </Form>
   );

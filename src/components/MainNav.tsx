@@ -1,4 +1,4 @@
-import { Home, Calendar, BarChart2 } from "lucide-react";
+import { Home, Calendar, BarChart2, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export function MainNav() {
@@ -8,6 +8,7 @@ export function MainNav() {
     { href: "/dashboard", label: "ダッシュボード", icon: Home },
     { href: "/calendar", label: "カレンダー", icon: Calendar },
     { href: "/subscriptions", label: "サブスクリプション", icon: BarChart2 },
+    { href: "/settings", label: "設定", icon: Settings },
   ];
 
   return (
@@ -24,7 +25,7 @@ export function MainNav() {
             }`}
           >
             <Icon className="h-4 w-4" />
-            <span>{link.label}</span>
+            <span className="hidden md:inline">{link.label}</span>
           </Link>
         );
       })}

@@ -1,5 +1,4 @@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useSubscriptionStore, type Subscription } from "@/lib/store";
@@ -10,6 +9,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase";
+import { useNavigate } from "react-router-dom";
 
 interface DisplaySubscription extends Subscription {
   isEndOfMonth?: boolean;
@@ -21,12 +22,24 @@ interface PaymentDay {
 }
 
 export default function Calendar() {
+  const navigate = useNavigate();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { toast } = useToast();
   const subscriptions = useSubscriptionStore((state) => state.subscriptions);
   const initializeSubscriptionsListener = useSubscriptionStore(
     (state) => state.initializeSubscriptionsListener
   );
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        navigate("/login");
+        return;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   useEffect(() => {
     const unsubscribe = initializeSubscriptionsListener();
@@ -154,96 +167,93 @@ export default function Calendar() {
   };
 
   return (
-    <>
-      <Header />
-      <main className="container py-6">
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>支払いカレンダー</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TooltipProvider>
-                <CalendarComponent
-                  mode="single"
-                  selected={date}
-                  onSelect={handleDateSelect}
-                  className="rounded-md border"
-                  modifiers={{
-                    payment: (date) => isDayWithPayment(date),
-                  }}
-                  modifiersStyles={{
-                    payment: {
-                      backgroundColor: "rgba(220, 38, 38, 0.1)",
-                      color: "rgb(220, 38, 38)",
-                      fontWeight: "bold",
-                    },
-                  }}
-                  components={{
-                    DayContent: (props) => {
-                      const tooltipContent = generateTooltipContent(props.date);
-                      if (!tooltipContent) {
-                        return <div>{props.date.getDate()}</div>;
-                      }
-                      return (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div>{props.date.getDate()}</div>
-                          </TooltipTrigger>
-                          <TooltipContent className="bg-black text-white border-black">
-                            {tooltipContent}
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    },
-                  }}
-                />
-              </TooltipProvider>
-            </CardContent>
-          </Card>
+    <main className="container py-6">
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>支払いカレンダー</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <TooltipProvider>
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={handleDateSelect}
+                className="rounded-md border"
+                modifiers={{
+                  payment: (date) => isDayWithPayment(date),
+                }}
+                modifiersStyles={{
+                  payment: {
+                    backgroundColor: "rgba(220, 38, 38, 0.1)",
+                    color: "rgb(220, 38, 38)",
+                    fontWeight: "bold",
+                  },
+                }}
+                components={{
+                  DayContent: (props) => {
+                    const tooltipContent = generateTooltipContent(props.date);
+                    if (!tooltipContent) {
+                      return <div>{props.date.getDate()}</div>;
+                    }
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>{props.date.getDate()}</div>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-black text-white border-black">
+                          {tooltipContent}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  },
+                }}
+              />
+            </TooltipProvider>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>今後12ヶ月の支払い予定</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4 max-h-[500px] overflow-y-auto">
-                {futurePayments.map((payment, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col space-y-2 border-b pb-4 last:border-0"
-                  >
-                    <div className="font-medium text-sm text-muted-foreground">
-                      {payment.date.toLocaleDateString("ja-JP")}
-                    </div>
-                    {payment.subscriptions.map((sub, subIndex) => (
-                      <div
-                        key={`${index}-${subIndex}`}
-                        className="flex items-center justify-between"
-                      >
-                        <div>
-                          <h4 className="font-medium">{sub.name}</h4>
-                          <div className="flex flex-col">
-                            <p className="text-sm text-muted-foreground">
-                              {sub.cycle === "monthly" ? "月額" : "年額"}
-                            </p>
-                            {sub.isEndOfMonth && (
-                              <p className="text-xs text-muted-foreground">
-                                ※月末日に調整されました
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <p className="font-medium">¥{sub.amount.toLocaleString()}</p>
-                      </div>
-                    ))}
+        <Card>
+          <CardHeader>
+            <CardTitle>今後12ヶ月の支払い予定</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 max-h-[500px] overflow-y-auto">
+              {futurePayments.map((payment, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col space-y-2 border-b pb-4 last:border-0"
+                >
+                  <div className="font-medium text-sm text-muted-foreground">
+                    {payment.date.toLocaleDateString("ja-JP")}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </>
+                  {payment.subscriptions.map((sub, subIndex) => (
+                    <div
+                      key={`${index}-${subIndex}`}
+                      className="flex items-center justify-between"
+                    >
+                      <div>
+                        <h4 className="font-medium">{sub.name}</h4>
+                        <div className="flex flex-col">
+                          <p className="text-sm text-muted-foreground">
+                            {sub.cycle === "monthly" ? "月額" : "年額"}
+                          </p>
+                          {sub.isEndOfMonth && (
+                            <p className="text-xs text-muted-foreground">
+                              ※月末日に調整されました
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <p className="font-medium">¥{sub.amount.toLocaleString()}</p>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </main>
   );
 }
