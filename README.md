@@ -73,7 +73,6 @@ VITE_FIREBASE_APP_ID=your-app-id
 2. 「ルール」タブを選択
 3. firebase.rulesのルールをコピー&ペースト:
 
-```
 
 ## Netlifyへのデプロイ方法
 
