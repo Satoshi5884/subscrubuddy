@@ -1,69 +1,135 @@
-# Welcome to your Lovable project
+# SubscruBuddy
 
-## Project info
+このプロジェクトは、サブスクリプション管理アプリケーションです。
 
-**URL**: https://lovable.dev/projects/d6e3b097-8df1-426a-a7b1-49ad2d55bb00
+## 必要な環境
 
-## How can I edit this code?
+- Node.js (v18.0.0以上)
+- npm または bun
+- Git
 
-There are several ways of editing your application.
+## 環境構築手順
 
-**Use Lovable**
+### 1. Node.jsのインストール
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/d6e3b097-8df1-426a-a7b1-49ad2d55bb00) and start prompting.
+1. [Node.js公式サイト](https://nodejs.org/)にアクセス
+2. LTS（推奨版）をダウンロード
+3. インストーラーを実行し、指示に従ってインストール
+4. インストール確認:
+```bash
+node -v
+npm -v
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+### 2. プロジェクトのセットアップ
 
-**Use your preferred IDE**
+```bash
+# リポジトリのクローン
+git clone https://github.com/your-username/subscrubuddy.git
+cd subscrubuddy
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# 依存関係のインストール
+npm install
+# または
+bun install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# 開発サーバーの起動
+npm run dev
+# または
+bun run dev
+```
 
-Follow these steps:
+## Firebase設定
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 1. Firebaseプロジェクトの作成
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. [Firebase Console](https://console.firebase.google.com/)にアクセス
+2. 「プロジェクトを追加」をクリック
+3. プロジェクト名を入力し、指示に従って作成
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. Firebaseの設定
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+1. プロジェクト設定から必要な環境変数を取得:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+
+2. `.env.local`ファイルを作成し、環境変数を設定:
+```env
+VITE_FIREBASE_API_KEY=your-api-key
+VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+VITE_FIREBASE_APP_ID=your-app-id
+```
+
+### 3. Firebase Rulesの設定
+
+1. Firebase Consoleで「Firestore Database」を選択
+2. 「ルール」タブを選択
+3. 以下のルールをコピー&ペースト:
+
+```rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+## Netlifyへのデプロイ方法
+
+### 1. Netlifyの設定
+
+1. [Netlify](https://www.netlify.com/)にアカウント作成・ログイン
+2. 「New site from Git」をクリック
+3. GitHubリポジトリを選択
+4. ビルド設定:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+
+### 2. 環境変数の設定
+
+1. Site settings > Build & deploy > Environment
+2. 「Edit variables」をクリック
+3. Firebaseの環境変数を追加
+
+### 3. デプロイ設定
+
+1. Deploy settingsで以下を設定:
+   - Base directory: `/`
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+2. 「Deploy site」をクリック
+
+## 開発の始め方
+
+1. 開発サーバーの起動:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+2. ブラウザで `http://localhost:5173` にアクセス
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## トラブルシューティング
 
-**Use GitHub Codespaces**
+### よくある問題と解決方法
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. `npm install`でエラーが発生する場合:
+   - Node.jsのバージョンを確認
+   - npm cacheのクリア: `npm cache clean --force`
 
-## What technologies are used for this project?
+2. 開発サーバーが起動しない場合:
+   - ポート5173が使用可能か確認
+   - プロジェクトを再クローン
 
-This project is built with .
+## サポート
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/d6e3b097-8df1-426a-a7b1-49ad2d55bb00) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+質問や問題がある場合は、GitHubのIssuesに投稿してください。
