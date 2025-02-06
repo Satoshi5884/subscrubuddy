@@ -25,7 +25,7 @@ npm -v
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/your-username/subscrubuddy.git
+git clone https://github.com/Satoshi5884/subscrubuddy.git
 cd subscrubuddy
 
 # 依存関係のインストール
@@ -71,17 +71,8 @@ VITE_FIREBASE_APP_ID=your-app-id
 
 1. Firebase Consoleで「Firestore Database」を選択
 2. 「ルール」タブを選択
-3. 以下のルールをコピー&ペースト:
+3. firebase.rulesのルールをコピー&ペースト:
 
-```rules
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
 ```
 
 ## Netlifyへのデプロイ方法
@@ -116,7 +107,8 @@ service cloud.firestore {
 npm run dev
 ```
 
-2. ブラウザで `http://localhost:5173` にアクセス
+2. ブラウザで `http://localhost:XXXX` にアクセス
+XXXXはポート番号です。ターミナルで指定されます。
 
 ## トラブルシューティング
 
@@ -127,9 +119,6 @@ npm run dev
    - npm cacheのクリア: `npm cache clean --force`
 
 2. 開発サーバーが起動しない場合:
-   - ポート5173が使用可能か確認
+   - ポートXXXXが使用可能か確認
    - プロジェクトを再クローン
 
-## サポート
-
-質問や問題がある場合は、GitHubのIssuesに投稿してください。
